@@ -1,0 +1,68 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <SurfaceView
+        android:id="@+id/surface_view"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_above="@id/button_save" />
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingTop="20dp">
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="7dp"
+            android:background="@color/colorTransparentGold"
+            android:layout_gravity="center_vertical" />
+
+        <TextView
+            android:id="@+id/text_weight"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            style="@style/WeightText"
+            android:text="87 kg" />
+    </FrameLayout>
+
+
+    <Button
+        android:id="@+id/button_save"
+        style="@style/ButtonSave"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_above="@+id/layout"
+        android:layout_alignParentStart="true"
+        android:text="@string/save" />
+
+    <LinearLayout
+        android:id="@id/layout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:orientation="vertical">
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="@color/colorWhite" />
+
+        <Button
+            android:id="@+id/button_type"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            style="@style/ButtonSave"
+            android:text="@string/type" />
+
+        <EditText
+            android:id="@+id/edit_text"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="number"
+            android:visibility="gone"
+            android:imeOptions="actionDone"
+            android:singleLine="true" />
+    </LinearLayout>
+</RelativeLayout>

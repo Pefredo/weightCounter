@@ -26,6 +26,11 @@ dependencies {
     androidTestImplementation 'com.android.support.test:runner:1.0.2'
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
 
+
+    //Logger
+    compile 'com.orhanobut:logger:2.1.1'
     //Diagrams
     implementation 'com.github.PhilJay:MPAndroidChart:v3.0.3'
+    //OCR
+    compile 'com.google.android.gms:play-services-vision:15.0.2'
 }

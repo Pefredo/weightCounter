@@ -8,20 +8,37 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
 import android.util.Log;
 import android.util.SparseArray;
+import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.inputmethod.EditorInfo;
+import android.widget.Button;
+import android.widget.EditText;
 import android.widget.TextView;
 
+import com.afollestad.materialdialogs.DialogAction;
+import com.afollestad.materialdialogs.MaterialDialog;
+import com.example.gosia.weightcounter.model.WeightData;
 import com.google.android.gms.vision.CameraSource;
 import com.google.android.gms.vision.Detector;
 import com.google.android.gms.vision.text.TextBlock;
 import com.google.android.gms.vision.text.TextRecognizer;
 import com.orhanobut.logger.Logger;
+import com.raizlabs.android.dbflow.config.FlowConfig;
+import com.raizlabs.android.dbflow.config.FlowManager;
+import com.raizlabs.android.dbflow.sql.language.SQLite;
 
 import java.io.IOException;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.List;
+import java.util.Locale;
 
 public class CameraFragment extends Fragment {
 
@@ -52,7 +69,10 @@ public class CameraFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup viewGroup, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_camera, viewGroup, false);
 
+        FlowManager.init(new FlowConfig.Builder(getContext()).build());
+
         startCamera(view);
+        buttonsOnClick(view);
 
         return view;
     }
@@ -137,5 +157,142 @@ public class CameraFragment extends Fragment {
                 }
             });
         }
+    }
+
+
+    private void buttonsOnClick(final View v) {
+
+        final Button typeButton = v.findViewById(R.id.button_type);
+        final Button saveButton = v.findViewById(R.id.button_save);
+        final EditText weightEditText = v.findViewById(R.id.edit_text_weight);
+        textWeight = v.findViewById(R.id.text_weight);
+
+
+        typeButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+
+                if (weightEditText.getVisibility() == View.VISIBLE) {
+                    weightEditText.setVisibility(View.GONE);
+                    typeButton.setVisibility(View.VISIBLE);
+                } else {
+                    weightEditText.setVisibility(View.VISIBLE);
+                    typeButton.setVisibility(View.GONE);
+                }
+            }
+        });
+
+
+        saveButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+
+
+                String weightType = weightEditText.getText().toString();
+                String weightCamera = textWeight.getText().toString();
+
+                weightEditText.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+                    public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
+                        if ((event != null && (event.getKeyCode() == KeyEvent.KEYCODE_NUMPAD_ENTER)) || (actionId == EditorInfo.IME_ACTION_DONE)) {
+                            Logger.e("Enter pressed");
+
+                            //hide_keyboard();
+                        }
+                        return false;
+                    }
+                });
+
+                if (weightType.length() != 0 && isNumeric(weightType)) {
+                    Logger.d("TYPE " + weightType);
+                    saveWeightValue(weightType, v);
+                } else if (weightCamera.length() != 0 && weightType.length() == 0 && isNumeric(weightCamera)) {
+                    Logger.d("CAMERA " + weightCamera);
+                    saveWeightValue(weightCamera, v);
+                }
+            }
+        });
+    }
+
+    private static boolean isNumeric(String str) {
+        try {
+            double num = Double.parseDouble(str);
+        } catch (NumberFormatException ex) {
+            return false;
+        }
+        return true;
+    }
+
+    private void saveWeightValue(String value, View v) {
+        String actualDate = getActualDate();
+        List<WeightData> data = SQLite.select().from(WeightData.class).queryList();
+        final EditText weightEditText = v.findViewById(R.id.edit_text_weight);
+        final Button typeButton = v.findViewById(R.id.button_type);
+
+
+        int lastDayNumber;
+
+        if (data.size() == 0) {
+            lastDayNumber = 1;
+        } else {
+            String previousDate = data.get(data.size() - 1).getLastDayWeightMeasurement();
+            int previousDayNumber = data.get(data.size() - 1).getDayNumber();
+
+            int differenceBetweenDays = calculateDifferenceBetweenDates(actualDate, previousDate);
+            lastDayNumber = previousDayNumber + differenceBetweenDays;
+        }
+
+        WeightData weightData = new WeightData();
+        weightData.setLastDayWeightMeasurement(actualDate);
+        weightData.setWeight(value);
+        weightData.setDayNumber(lastDayNumber);
+
+        weightData.save();
+
+        MaterialDialog okDialog = new MaterialDialog.Builder(getContext())
+                .title(R.string.saved)
+                .titleColorRes(R.color.colorGold)
+                .backgroundColorRes(R.color.colorBlack)
+                .content(R.string.added)
+                .contentColor(getResources().getColor(R.color.colorWhite))
+                .positiveText(R.string.ok)
+                .positiveColor(getResources().getColor(R.color.colorGold))
+                .onPositive(new MaterialDialog.SingleButtonCallback() {
+                    @Override
+                    public void onClick(MaterialDialog dialog, DialogAction which) {
+                        dialog.dismiss();
+                        weightEditText.setText("");
+                        weightEditText.setVisibility(View.GONE);
+                        typeButton.setVisibility(View.VISIBLE);
+                    }
+                })
+                .show();
+
+
+    }
+
+    private String getActualDate() {
+        DateFormat df = new SimpleDateFormat("dd MMMM yyyy", Locale.getDefault());
+
+        return df.format(Calendar.getInstance().getTime());
+    }
+
+    private int calculateDifferenceBetweenDates(String stringActualDate, String stringLastDate) {
+        DateFormat df = new SimpleDateFormat("dd MMMM yyyy", Locale.getDefault());
+
+        Date actualDate = null;
+        Date lastDate = null;
+        long differenceBetweenDays = -1;
+
+        try {
+            actualDate = df.parse(stringActualDate);
+            lastDate = df.parse(stringLastDate);
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+
+        if ((actualDate != null) && (lastDate != null)) {
+            differenceBetweenDays = ((((((actualDate.getTime() - lastDate.getTime()) / 1000) / 60)) / 60) / 24);
+        }
+        return (int) differenceBetweenDays;
     }
 }

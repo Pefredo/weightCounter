@@ -3,4 +3,7 @@
     <string name="save">Save</string>
     <string name="type">Type</string>
     <string name="kg">kg</string>
+    <string name="saved">Saved</string>
+    <string name="added">Added new weight</string>
+    <string name="ok">ok</string>
 </resources>

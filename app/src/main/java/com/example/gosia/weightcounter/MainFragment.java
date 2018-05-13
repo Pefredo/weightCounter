@@ -8,6 +8,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.LinearLayout;
 
 public class MainFragment extends Fragment {
 
@@ -27,6 +28,17 @@ public class MainFragment extends Fragment {
             }
         });
 
+        LinearLayout chartLayout = view.findViewById(R.id.chart_layout);
+        chartLayout.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                HistoryFragment fragmentHistory = new HistoryFragment();
+                FragmentTransaction transaction = getActivity().getSupportFragmentManager().beginTransaction();
+                transaction.replace(R.id.mainFragmentContainer, fragmentHistory)
+                        .addToBackStack(null)
+                        .commit();
+            }
+        });
 
         return view;
     }

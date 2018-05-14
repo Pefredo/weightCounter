@@ -6,4 +6,5 @@
     <string name="saved">Saved</string>
     <string name="added">Added new weight</string>
     <string name="ok">ok</string>
+    <string name="no_text_data">No text data available</string>
 </resources>

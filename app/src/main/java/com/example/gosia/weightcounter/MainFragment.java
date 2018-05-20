@@ -27,6 +27,7 @@ import com.raizlabs.android.dbflow.sql.language.SQLite;
 import java.util.ArrayList;
 import java.util.List;
 
+
 public class MainFragment extends Fragment {
 
     @Override
@@ -49,11 +50,18 @@ public class MainFragment extends Fragment {
         chartLayout.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                HistoryFragment fragmentHistory = new HistoryFragment();
-                FragmentTransaction transaction = getActivity().getSupportFragmentManager().beginTransaction();
-                transaction.replace(R.id.mainFragmentContainer, fragmentHistory)
-                        .addToBackStack(null)
-                        .commit();
+
+                List<WeightData> data = SQLite.select().
+                        from(WeightData.class).queryList();
+
+                if (data.isEmpty()) {
+                } else {
+                    HistoryFragment fragmentHistory = new HistoryFragment();
+                    FragmentTransaction transaction = getActivity().getSupportFragmentManager().beginTransaction();
+                    transaction.replace(R.id.mainFragmentContainer, fragmentHistory)
+                            .addToBackStack(null)
+                            .commit();
+                }
             }
         });
 
@@ -83,7 +91,7 @@ public class MainFragment extends Fragment {
             dataDiagram.setDrawFilled(true);
 
             //disable values and circle
-            dataDiagram.setDrawValues(true);
+            dataDiagram.setDrawValues(false);
             dataDiagram.setValueTextColor(getResources().getColor(R.color.colorGold));
 
             dataDiagram.setDrawCircles(true);
@@ -96,45 +104,40 @@ public class MainFragment extends Fragment {
             dataSets.add(dataDiagram); // add the datasets
 
             // set data
-            LineChart mLineChart = v.findViewById(R.id.chart);
-
-
-            //NOT WORKING :(
-            mLineChart.setNoDataText(getResources().getString(R.string.no_text_data));
-            mLineChart.setNoDataTextColor(getResources().getColor(R.color.colorGold));
-
-            mLineChart.setTouchEnabled(true);
-
+            LineChart lineChart = v.findViewById(R.id.chart);
 
             LineData lineData = new LineData(dataSets);
 
             // remove axis
-            YAxis leftAxis = mLineChart.getAxisLeft();
+            YAxis leftAxis = lineChart.getAxisLeft();
             leftAxis.setEnabled(false);
-            YAxis rightAxis = mLineChart.getAxisRight();
+            YAxis rightAxis = lineChart.getAxisRight();
             rightAxis.setEnabled(false);
 
-            XAxis xAxis = mLineChart.getXAxis();
+            XAxis xAxis = lineChart.getXAxis();
             xAxis.setEnabled(false);
 
             // hide legend
-            Legend legend = mLineChart.getLegend();
+            Legend legend = lineChart.getLegend();
             legend.setEnabled(false);
 
             //hide description
             Description description = new Description();
             description.setText("");
-            mLineChart.setDescription(description);
+            lineChart.setDescription(description);
 
             //disable touch gestures
-            mLineChart.setTouchEnabled(false);
+            lineChart.setTouchEnabled(false);
 
             //set smooth line
-            //dataDiagram.setMode(LineDataSet.Mode.CUBIC_BEZIER);
-            dataDiagram.setMode(LineDataSet.Mode.LINEAR);
+            dataDiagram.setMode(LineDataSet.Mode.CUBIC_BEZIER);
 
-            mLineChart.setData(lineData);
-            mLineChart.invalidate(); // refresh
+            //underline color
+            dataDiagram.setDrawFilled(false);
+
+
+            lineChart.setData(lineData);
+            lineChart.invalidate(); // refresh
         }
     }
 

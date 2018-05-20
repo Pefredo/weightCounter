@@ -1,6 +1,7 @@
 package com.example.gosia.weightcounter;
 
 import android.Manifest;
+import android.content.Context;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -8,20 +9,18 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
 import android.util.Log;
 import android.util.SparseArray;
-import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.inputmethod.EditorInfo;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 
-import com.afollestad.materialdialogs.DialogAction;
-import com.afollestad.materialdialogs.MaterialDialog;
 import com.example.gosia.weightcounter.model.WeightData;
+import com.example.gosia.weightcounter.util.DialogCreator;
 import com.google.android.gms.vision.CameraSource;
 import com.google.android.gms.vision.Detector;
 import com.google.android.gms.vision.text.TextBlock;
@@ -141,13 +140,7 @@ public class CameraFragment extends Fragment {
                                     stringBuilder.append(item.getValue());
                                     stringBuilder.append("\n");
                                 }
-
-                                String text = stringBuilder.toString();
-                                Logger.d("Text from the camera: " + text);
-
-                                textWeight.setText(text.replaceAll("\\D+", ""));
-                                Logger.d("only numbers " + text.replaceAll("\\D+", ""));
-
+                                textWeight.setText(stringBuilder.toString());
                             }
                         });
                     }
@@ -175,6 +168,14 @@ public class CameraFragment extends Fragment {
                 } else {
                     weightEditText.setVisibility(View.VISIBLE);
                     typeButton.setVisibility(View.GONE);
+                    weightEditText.requestFocus();
+                    // Show soft keyboard for the user to enter the value.
+                    if (getActivity() != null) {
+                        InputMethodManager imm = (InputMethodManager) getActivity().getSystemService(Context.INPUT_METHOD_SERVICE);
+                        if (imm != null) {
+                            imm.showSoftInput(weightEditText, InputMethodManager.SHOW_IMPLICIT);
+                        }
+                    }
                 }
             }
         });
@@ -187,17 +188,6 @@ public class CameraFragment extends Fragment {
 
                 String weightType = weightEditText.getText().toString();
                 String weightCamera = textWeight.getText().toString();
-
-                weightEditText.setOnEditorActionListener(new TextView.OnEditorActionListener() {
-                    public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
-                        if ((event != null && (event.getKeyCode() == KeyEvent.KEYCODE_NUMPAD_ENTER)) || (actionId == EditorInfo.IME_ACTION_DONE)) {
-                            Logger.e("Enter pressed");
-
-                            //hide_keyboard();
-                        }
-                        return false;
-                    }
-                });
 
                 if (weightType.length() != 0 && isNumeric(weightType)) {
                     Logger.d("TYPE " + weightType);
@@ -243,28 +233,24 @@ public class CameraFragment extends Fragment {
         weightData.setWeight(value);
         weightData.setDayNumber(lastDayNumber);
 
-        weightData.save();
+        if (!data.isEmpty()) {
+            for (int i = 0; i < data.size(); i++) {
+                if (data.get(i).getLastDayWeightMeasurement().equals(actualDate)) {
+                    DialogCreator.getInstance().showErrorDialog(getContext(), R.string.saved_data_already);
+                    break;
+                } else {
+                    weightData.save();
+                    DialogCreator.getInstance().showDialog(getContext(), R.string.saved, R.string.added);
+                }
+            }
+        } else {
+            weightData.save();
+            DialogCreator.getInstance().showDialog(getContext(), R.string.saved, R.string.added);
+        }
 
-        MaterialDialog okDialog = new MaterialDialog.Builder(getContext())
-                .title(R.string.saved)
-                .titleColorRes(R.color.colorGold)
-                .backgroundColorRes(R.color.colorBlack)
-                .content(R.string.added)
-                .contentColor(getResources().getColor(R.color.colorWhite))
-                .positiveText(R.string.ok)
-                .positiveColor(getResources().getColor(R.color.colorGold))
-                .onPositive(new MaterialDialog.SingleButtonCallback() {
-                    @Override
-                    public void onClick(MaterialDialog dialog, DialogAction which) {
-                        dialog.dismiss();
-                        weightEditText.setText("");
-                        weightEditText.setVisibility(View.GONE);
-                        typeButton.setVisibility(View.VISIBLE);
-                    }
-                })
-                .show();
-
-
+        weightEditText.setText("");
+        weightEditText.setVisibility(View.GONE);
+        typeButton.setVisibility(View.VISIBLE);
     }
 
     private String getActualDate() {
